@@ -1,0 +1,260 @@
+---
+title: "Analisis Tingkat Keberhasilan Digital Marketing Lewat Media Sosial TikTok"
+author: "Kelompok 6 : Evangeline Suciadi - (NIM: 00000068887)"
+                     "Nurfajriah Oktaviani -(NIM: 00000068637)"
+                     "Tiffany Valencia - (NIM: 00000069484) "
+date: "`r Sys.Date()`"
+output:
+html_document: default
+word_document: default
+---
+
+```{r Import data}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(moments)
+library(nortest)
+library(reshape2)
+dataset <- read_excel("Survey Tingkat Keberhasilan Digital Marketing Lewat Media Sosial TikTok.xlsx", 
+    sheet = "Form Responses 1")
+head(dataset, n=10)
+colnames(dataset)
+```
+
+Ho: Terdapat hubungan signifikan antara usia individu dan frekuensi penggunaan
+
+Ha: Tidak terdapat hubungan signifikan antara usia individu dan frekuensi penggunaan
+
+```{r spearman}
+# Mengubah tipe data menjadi ordinal 
+dataset$`Seberapa sering anda menggunakan aplikasi TikTok?` <- dataset$`Seberapa sering anda menggunakan aplikasi TikTok?` %>%  recode("Setiap hari" = 1, "beberapa hari sekali" = 2, "1 minggu sekali" = 3, "1 bulan sekali atau kurang" = 4) dataset$`Berapa usia anda? (isi dengan 2 digit angka)` <- dataset$`Berapa usia anda? (isi dengan 2 digit angka)` %>%   recode("17-22" = 1, "23-28" = 2, "29-33" = 3, ">33" = 4) sum(is.na(dataset$`Seberapa sering anda menggunakan aplikasi TikTok?`)) cor.test(dataset$`Berapa usia anda? (isi dengan 2 digit angka)`, dataset$`Seberapa sering anda menggunakan aplikasi TikTok?`, method = "spearman")
+```
+
+Ho: Terdapat hubungan signifikan antara usia individu dan kemungkinan interaksi merek
+
+Ha: Tidak terdapat hubungan signifikan antara usia individu dan kemungkinan interaksi merek
+
+```{r spearman2} # Mengubah tipe data menjadi ordinal}
+dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?` <- dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?` %>%   recode("Sangat Rendah" =1 , "Rendah"=2, "Sedang"=3, "Tinggi"=4, "Sangat Tinggi"=5) sum(is.na(dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`)) cor.test(dataset$`Berapa usia anda? (isi dengan 2 digit angka)`, dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`, method = "spearman")
+```
+
+Ho: Terdapat hubungan signifikan antara frekuensi penggunaan dan kemungkinan interaksi merek
+
+Ha: Tidak terdapat hubungan signifikan antara frekuensi penggunaan dan kemungkinan interaksi merek
+
+```{r}
+cor.test(dataset$`Seberapa sering anda menggunakan aplikasi TikTok?`, dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`, method = "spearman")
+```
+
+```{r }
+tab1 <- table(dataset$`Apa jenis kelamin anda?`, dataset$`Berapa usia anda? (isi dengan 2 digit angka)`, dataset$`Seberapa sering anda menggunakan aplikasi TikTok?`)
+ftable(tab1)
+df <- melt(tab1)
+head(df)
+colnames(df) <- c("Jenis Kelamin", "Usia", "Frekuensi Penggunaan", "Count")
+ggplot(df, aes(x = Usia, y = Count, fill = `Frekuensi Penggunaan`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Frekuensi Penggunaan") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r }
+tab2 <- table(dataset$`Apa jenis kelamin anda?`,dataset$`Berapa usia anda? (isi dengan 2 digit angka)`, dataset$`Jenis konten apa yang menurut Anda paling menarik di TikTok?`)
+ftable(tab2)
+df1 <- melt(tab2)
+head(df1)
+colnames(df1) <- c("Jenis Kelamin", "Usia", "Jenis Konten", "Count")
+ggplot(df1, aes(x = Usia, y = Count, fill = `Jenis Konten`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Jenis Konten") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df1, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+anova1 <- aov(`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?` ~ dataset$`Jenis konten apa yang menurut Anda paling menarik di TikTok?`, data=dataset)
+summary(anova1)
+TukeyHSD(anova1)
+#homogenity test
+library(car)
+leveneTest(`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?` ~ dataset$`Jenis konten apa yang menurut Anda paling menarik di TikTok?`, data=dataset)
+#2. Normality of Residuals
+# Extract the residuals
+aov_residuals <- residuals(object = anova1 )
+# Run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+```
+
+```{r }
+tab3 <- table(dataset$`Apa jenis kelamin anda?`,dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Apakah Anda pernah melakukan pembelian berdasarkan iklan TikTok atau promosi influencer?`)
+ftable(tab3)
+df2 <- melt(tab3)
+head(df2)
+colnames(df2) <- c("Jenis Kelamin", "Usia", "Pembelian Berdasarkan Iklan Tiktok atau Promosi Influencer", "Count")
+ggplot(df2, aes(x = Usia, y = Count, fill = `Pembelian Berdasarkan Iklan Tiktok atau Promosi Influencer`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Pembelian Berdasarkan Iklan Tiktok atau Promosi Influencer") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df2, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r }
+# Mengubah tipe data menjadi ordinal
+dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?` <- factor(dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`, ordered = TRUE)
+levels(dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`) <- c("Sangat Rendah", "Rendah", "Sedang", "Tinggi", "Sangat Tinggi")
+tab4 <- table(dataset$`Apa jenis kelamin anda?`,dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Seberapa besar kemungkinan Anda berinteraksi dengan merek di TikTok?`)
+ftable(tab4)
+df3 <- melt(tab4)
+head(df3)
+colnames(df3) <- c("Jenis Kelamin", "Usia", "Kemungkinan Interaksi dengan Merek", "Count")
+ggplot(df3, aes(x = Usia, y = Count, fill = `Kemungkinan Interaksi dengan Merek`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Kemungkinan Interaksi dengan Merek") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df3, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r }
+tab5 <- table(dataset$`Apa jenis kelamin anda?`,dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Seberapa besar kemungkinan Anda membagikan konten TikTok dengan teman dan pengikut Anda?`)
+ftable(tab5)
+df4 <- melt(tab5)
+head(df4)
+colnames(df4) <- c("Jenis Kelamin", "Usia", "Kemungkinan Membagikan Konten", "Count")
+ggplot(df4, aes(x = Usia, y = Count, fill = `Kemungkinan Membagikan Konten`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Kemungkinan Membagikan Konten") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df4, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r}
+tab6 <- table(dataset$`Apa jenis kelamin anda?`, dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`)
+ftable(tab6)
+df5 <- melt(tab6)
+head(df5)
+colnames(df5) <- c("Jenis Kelamin", "Usia", "Persepsi Keefektifan Tiktok sebagai Platform Pemasaran Digital", "Count")
+ggplot(df5, aes(x = Usia, y = Count, fill = `Persepsi Keefektifan Tiktok sebagai Platform Pemasaran Digital`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Persepsi Keefektifan Tiktok sebagai Platform Pemasaran Digital") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df5, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r}
+tab7 <- table(dataset$`Apa jenis kelamin anda?`,dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Menurut Anda apa yang dapat ditingkatkan pada TikTok untuk meningkatkan tingkat keberhasilan kampanye pemasaran digital?`)
+ftable(tab7)
+df6 <- melt(tab7)
+df6
+colnames(df6) <- c("Jenis Kelamin", "Usia", "Aspek Peningkatan TikTok dalam Kampanye Pemasaran Digital", "Count")
+ggplot(df6, aes(x = Usia, y = Count, fill = `Aspek Peningkatan TikTok dalam Kampanye Pemasaran Digital`)) + 
+  geom_bar(stat = "identity",position = "stack") + facet_wrap(~ `Jenis Kelamin`, nrow = 1) +  labs(x = "Usia", y = "Frekuensi", fill = "Aspek Peningkatan TikTok dalam Kampanye Pemasaran Digital") +
+  scale_fill_discrete(name = "Frekuensi") + geom_text(data = subset(df6, Count > 0),aes(label=Count), position=position_stack(vjust=0.5))
+```
+
+```{r }
+lama_waktu <- dataset$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`
+boxplot(lama_waktu, col = "#F8BC75", ylab= "Lama Waktu Penggunaan Tiktok (jam)")
+boxplot.stats(lama_waktu)
+summarise <- c(round(summary(lama_waktu),2), "var" = round(var(lama_waktu), 2))
+summarise
+
+```
+
+Nilai skewness dari data lama waktu sebesar
+
+```{r Uji normalitas}
+skewness(lama_waktu)
+```
+
+karena nilainya positif, maka kemiringan (skewness) distribusi data tersebut cenderung ke arah kanan. Hal ini sesuai dengan boxplot di atas dimana jarak antara garis median dengan upper whisker lebih besar daripada jarak ke lower whisker.
+
+```{r histogram}
+hist(lama_waktu,xlab="Lama waktu penggunaan aplikasi Tiktok",xlim = c(0,12), ylab="Frequency", col = "#F8BC75", freq = TRUE) 
+```
+
+```{r}
+ad.test(lama_waktu)
+```
+
+Hipotesis: H0: Rata-rata lama waktu responden menggunakan TikTok tiap hari sama dengan 3,88 jam H1: Rata-rata lama waktu responden menggunakan TikTok tiap hari tidak sama dengan 3,88 jam
+
+```{r one sample t test}
+t_test1 <- t.test(dataset$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, mu = 3.88)
+t_test1
+cat("Hasil Uji T Satu Sampel")
+cat("T-value:", t_test1$statistic, "\n")
+cat("P-value:", t_test1$p.value, "\n")
+```
+
+Hipotesa yang digunakan: H0: Rata-rata lama waktu penggunaan aplikasi tiktok responden perempuan sama dengan responden laki-laki H1: Rata-rata lama waktu penggunaan aplikasi tiktok responden perempuan lebih tinggi daripada responden laki-laki
+
+```{r t-test 2 sample test}
+data_laki_laki <- dataset %>% filter(`Apa jenis kelamin anda?` == "Laki-laki")
+data_perempuan <- dataset %>% filter(`Apa jenis kelamin anda?` == "Perempuan")
+var.test(data_perempuan$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, data_laki_laki$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`)
+t_test2 <- t.test(data_perempuan$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`,data_laki_laki$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = c("greater"), var.equal = TRUE)
+t_test2
+wilcox.test(data_perempuan$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`,data_laki_laki$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = "greater")
+cat("Hasil Uji T Dua Sampel")
+cat("T-value:", t_test2$statistic, "\n")
+cat("P-value:", t_test2$p.value, "\n")
+```
+
+Hipotesis Null (H0): Rata-rata lama waktu menggunakan TikTok tiap hari pada kelompok dengan riwayat pembelian sama dengan rata-rata pada kelompok tanpa riwayat pembelian. Hipotesis Alternatif (H1): Rata-rata lama waktu menggunakan TikTok tiap hari pada kelompok dengan riwayat pembelian lebih tinggi dari rata-rata pada kelompok tanpa riwayat pembelian.
+
+```{r t test 2 sample}
+dengan_riwayat <- dataset %>% filter(`Apakah Anda pernah melakukan pembelian berdasarkan iklan TikTok atau promosi influencer?` == "Ya")
+tanpa_riwayat <- dataset %>% filter(`Apakah Anda pernah melakukan pembelian berdasarkan iklan TikTok atau promosi influencer?` == "Tidak")
+var.test(dengan_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, tanpa_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`)
+t_test3 <- t.test(dengan_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`,tanpa_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = c("greater"), var.equal = TRUE)
+t_test3
+wilcox.test(dengan_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`,tanpa_riwayat$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = c("greater"))
+
+cat("Hasil Uji T Dua Sampel")
+cat("T-value:", t_test3$statistic, "\n")
+cat("P-value:", t_test3$p.value, "\n")
+```
+
+Hipotesis Null (H0): Rata-rata lama waktu menggunakan TikTok tiap hari pada kelompok yang menganggap TikTok efektif sama dengan rata-rata pada kelompok yang tidak menganggapnya efektif. Hipotesis Alternatif (H1): Rata-rata lama waktu menggunakan TikTok tiap hari pada kelompok yang menganggap TikTok efektif lebih tinggi dari rata-rata pada kelompok yang tidak menganggapnya efektif.
+
+```{r t test 2 sample test}
+efektif <- dataset %>% filter(`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?` == "ya")
+tidak_efektif <- dataset %>% filter(`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?` == "tidak")
+var.test(efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, tidak_efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`)
+t_test4 <- t.test(efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`,tidak_efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = c("greater"), var.equal = TRUE); t_test4
+wilcox.test(efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, tidak_efektif$`Berapa banyak waktu yang Anda habiskan untuk TikTok setiap hari?`, alternative = c("greater"))
+cat("Hasil Uji T Dua Sampel")
+cat("T-value:", t_test4$statistic, "\n")
+cat("P-value:", t_test4$p.value, "\n")
+```
+
+hipotesis H0: Mayoritas responden tidak setuju TikTok adalah media digital marketing yang efektif H1: Mayoritas responden setuju TikTok adalah media digital marketing yang efektif
+
+```{r prop test}
+setuju <- sum(dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`=="ya")
+setuju
+ptest<-prop.test(setuju, n = nrow(dataset), p = .5, alternative = "greater");ptest
+cat("Hasil Uji Proporsi Satu Sampel")
+cat("Chisq-value:", ptest$statistic, "\n")
+cat("P-value:", ptest$p.value, "\n")
+```
+
+H0: Tidak ada hubungan antara usia (variabel kategorikal) dan preferensi merek (variabel kategorikal). H1: Terdapat hubungan antara usia (variabel kategorikal) dan preferensi merek (variabel kategorikal).
+
+```{r}
+a <- table(dataset$`Berapa usia anda? (isi dengan 2 digit angka)`,dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`)
+fisher.test(a)
+```
+
+H0: Tidak ada hubungan antara jenis kelamin (variabel kategorikal) dan preferensi merek (variabel kategorikal). H1: Terdapat hubungan antara jenis kelamin (variabel kategorikal) dan preferensi merek (variabel kategorikal).
+
+```{r}
+b <- table(dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`, dataset$`Apa jenis kelamin anda?`)
+fisher.test(b)
+```
+
+hipotesis nol (H0) menyatakan bahwa tidak ada hubungan yang signifikan antara jenis konten yang paling menarik di TikTok dengan pendapat tentang efektivitas TikTok sebagai platform pemasaran digital.
+
+Hipotesis alternatif (H1) menyatakan bahwa terdapat hubungan yang signifikan antara jenis konten yang paling menarik di TikTok dengan pendapat tentang efektivitas TikTok sebagai platform pemasaran digital.
+
+```{r}
+c <- table(dataset$`Jenis konten apa yang menurut Anda paling menarik di TikTok?`, dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`)
+fisher.test(c)
+```
+
+hipotesis nol (H0) menyatakan bahwa tidak ada hubungan yang signifikan antara pembelian berdasarkan iklan/influencer dengan pendapat tentang efektivitas TikTok sebagai platform pemasaran digital.
+
+Hipotesis alternatif (H1) menyatakan bahwa terdapat hubungan yang signifikan antara pembelian berdasarkan iklan/influencer dengan pendapat tentang efektivitas TikTok sebagai platform pemasaran digital.
+
+```{r}
+e <- table(dataset$`Apakah Anda pernah melakukan pembelian berdasarkan iklan TikTok atau promosi influencer?`, dataset$`Apakah menurut Anda TikTok adalah platform yang efektif untuk pemasaran digital?`)
+fisher.test(e)
+```
